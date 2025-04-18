@@ -40,6 +40,24 @@
         dd {
             margin-bottom: 1em;
         }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+        }
+
+        .diagram-caption {
+            text-align: center;
+            font-style: italic;
+            margin-top: -15px;
+            margin-bottom: 25px;
+            color: #555;
+        }
     </style>
 
 </head>
@@ -61,8 +79,10 @@
             <li><a href="#abstract">Abstract</a></li>
             <li><a href="#namespace">Namespace</a></li>
             <li><a href="#overview">Overview</a></li>
+            <li><a href="#task-lifecycle">Task Lifecycle</a></li>
             <li><a href="#classes">Classes</a></li>
             <li><a href="#properties">Properties</a></li>
+            <li><a href="#mcp-integration">MCP Integration</a></li>
             <li><a href="#integration-patterns">Integration Patterns</a></li>
         </ul>
     </nav>
@@ -112,8 +132,29 @@
             </dl>
         </section>
 
+        <section id="task-lifecycle">
+            <h2>Task Lifecycle</h2>
+            <p>Tasks in the A2A protocol follow a well-defined lifecycle, transitioning between several states as they
+                are processed:</p>
+
+            <img src="images/a2a-task-lifecycle.png" alt="A2A Task Lifecycle" />
+            <p class="diagram-caption">State transitions in the A2A task lifecycle</p>
+
+            <p>The task lifecycle begins when a client creates a task in the "Submitted" state. The agent then starts
+                processing the task, transitioning it to the "Working" state. From there, the task may require
+                additional information from the client ("InputRequired"), complete successfully ("Completed"), encounter
+                an error ("Failed"), or be terminated by the client ("Canceled").</p>
+
+            <p>This state-based approach allows both clients and agents to track the progress of tasks and determine the
+                appropriate next steps in their interaction.</p>
+        </section>
+
         <section id="classes">
             <h2>Classes</h2>
+
+            <img src="images/a2a-core-classes-fixed.png" alt="A2A Core Classes" />
+            <p class="diagram-caption">Core classes and relationships in the A2A ontology</p>
+
             <dl>
                 <dt>a2a:AgentCard</dt>
                 <dd>A description of an agent's capabilities, authentication requirements, and metadata</dd>
@@ -198,6 +239,28 @@
                 <dt>a2a:hasAuthentication</dt>
                 <dd>Links an agent card or push notification config to its authentication requirements</dd>
             </dl>
+        </section>
+
+        <section id="mcp-integration">
+            <h2>MCP Integration</h2>
+            <p>The Agent2Agent Protocol (A2A) and Model Context Protocol (MCP) serve complementary roles in the agent
+                ecosystem. A2A focuses on agent-to-agent communication, while MCP specializes in connecting language
+                models with tools and resources.</p>
+
+            <img src="images/a2a-mcp-relationship.png" alt="A2A and MCP Relationship" />
+            <p class="diagram-caption">Relationship between A2A and MCP protocols in an agent ecosystem</p>
+
+            <p>In this integration pattern:</p>
+            <ul>
+                <li>Client agents use A2A to communicate with remote agents in natural modalities</li>
+                <li>Remote agents use MCP to access specialized tools and resources</li>
+                <li>A2A handles task state management and agent-to-agent collaboration</li>
+                <li>MCP handles structured tool invocation and resource access</li>
+                <li>Agent capabilities in A2A can be implemented using MCP tools</li>
+            </ul>
+
+            <p>This complementary relationship allows for building complex agent ecosystems where agents can both
+                collaborate with each other and access the tools and data they need to complete tasks effectively.</p>
         </section>
 
         <section id="integration-patterns">
