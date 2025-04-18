@@ -1,0 +1,66 @@
+classDiagram
+    class AgentCard {
+        name: String
+        description: String
+        url: String
+        version: String
+    }
+
+    class Skill {
+        id: String
+        name: String
+        description: String
+        tags: List
+        examples: List
+    }
+
+    class Task {
+        id: String
+        sessionId: String
+    }
+
+    class TaskStatus {
+        state: TaskState
+        timestamp: String
+    }
+
+    class Message {
+        role: String
+    }
+
+    class Artifact {
+        name: String
+        description: String
+        index: Integer
+        append: Boolean
+        lastChunk: Boolean
+    }
+
+    class Part
+
+    class TextPart {
+        text: String
+    }
+
+    class FilePart
+
+    class DataPart {
+        data: Map
+    }
+
+    class PushNotificationConfig {
+        url: String
+        token: String
+    }
+
+    AgentCard --> Skill : hasSkill
+    Task --> TaskStatus : hasStatus
+    Task --> Message : hasMessage
+    Task --> Artifact : hasArtifact
+    Message --> Part : hasPart
+    Artifact --> Part : hasPart
+    Task --> PushNotificationConfig : hasPushNotificationConfig
+
+    Part <|-- TextPart
+    Part <|-- FilePart
+    Part <|-- DataPart
