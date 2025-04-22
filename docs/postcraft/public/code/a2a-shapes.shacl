@@ -1,0 +1,209 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix a2a: <http://purl.org/stuff/a2a/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+a2a:AgentCardShape
+a sh:NodeShape ;
+sh:targetClass a2a:AgentCard ;
+sh:property [
+  sh:path a2a:name ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+  sh:minLength 1 ;
+] ;
+sh:property [
+  sh:path a2a:url ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+  sh:pattern "^https?://.+"
+] ;
+sh:property [
+  sh:path a2a:version ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+] ;
+sh:property [
+  sh:path a2a:hasSkill ;
+  sh:minCount 1 ;
+  sh:class a2a:Skill ;
+] ;
+sh:property [
+  sh:path a2a:hasCapabilities ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:class a2a:AgentCapabilities ;
+] .
+
+a2a:SkillShape
+a sh:NodeShape ;
+sh:targetClass a2a:Skill ;
+sh:property [
+  sh:path a2a:id ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+  sh:minLength 1 ;
+] ;
+sh:property [
+  sh:path a2a:name ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+  sh:minLength 1 ;
+] .
+
+a2a:TaskShape
+a sh:NodeShape ;
+sh:targetClass a2a:Task ;
+sh:property [
+  sh:path a2a:id ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+  sh:minLength 1 ;
+] ;
+sh:property [
+  sh:path a2a:hasStatus ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:class a2a:TaskStatus ;
+] .
+
+a2a:TaskStatusShape
+a sh:NodeShape ;
+sh:targetClass a2a:TaskStatus ;
+sh:property [
+  sh:path a2a:state ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:class a2a:TaskState ;
+] .
+
+a2a:MessageShape
+a sh:NodeShape ;
+sh:targetClass a2a:Message ;
+sh:property [
+  sh:path a2a:role ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+  sh:in ("user" "agent") ;
+] ;
+sh:property [
+  sh:path a2a:hasPart ;
+  sh:minCount 1 ;
+  sh:class a2a:Part ;
+] .
+
+a2a:TextPartShape
+a sh:NodeShape ;
+sh:targetClass a2a:TextPart ;
+sh:property [
+  sh:path a2a:text ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+] .
+
+a2a:FilePartShape
+a sh:NodeShape ;
+sh:targetClass a2a:FilePart ;
+sh:property [
+  sh:path a2a:file ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:class a2a:FileContent ;
+] .
+
+a2a:FileContentShape
+a sh:NodeShape ;
+sh:targetClass a2a:FileContent ;
+sh:xone (
+  [
+    sh:property [
+      sh:path a2a:bytes ;
+      sh:minCount 1 ;
+      sh:datatype xsd:base64Binary ;
+    ]
+  ]
+  [
+    sh:property [
+      sh:path a2a:uri ;
+      sh:minCount 1 ;
+      sh:datatype xsd:anyURI ;
+    ]
+  ]
+) .
+
+a2a:DataPartShape
+a sh:NodeShape ;
+sh:targetClass a2a:DataPart ;
+sh:property [
+  sh:path a2a:data ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+] .
+
+a2a:ArtifactShape
+a sh:NodeShape ;
+sh:targetClass a2a:Artifact ;
+sh:property [
+  sh:path a2a:hasPart ;
+  sh:minCount 1 ;
+  sh:class a2a:Part ;
+] .
+
+a2a:PushNotificationConfigShape
+a sh:NodeShape ;
+sh:targetClass a2a:PushNotificationConfig ;
+sh:property [
+  sh:path a2a:url ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:string ;
+  sh:pattern "^https?://.+"
+] .
+
+a2a:AgentCapabilitiesShape
+a sh:NodeShape ;
+sh:targetClass a2a:AgentCapabilities ;
+sh:property [
+  sh:path a2a:streaming ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:boolean ;
+] ;
+sh:property [
+  sh:path a2a:pushNotifications ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:boolean ;
+] ;
+sh:property [
+  sh:path a2a:stateTransitionHistory ;
+  sh:maxCount 1 ;
+  sh:datatype xsd:boolean ;
+] .
+
+a2a:AgentAuthenticationShape
+a sh:NodeShape ;
+sh:targetClass a2a:AgentAuthentication ;
+sh:property [
+  sh:path a2a:schemes ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+] .
+
+a2a:TaskStateValueShape
+a sh:NodeShape ;
+sh:targetClass a2a:TaskState ;
+sh:in (
+  a2a:SubmittedState
+  a2a:WorkingState
+  a2a:InputRequiredState
+  a2a:CompletedState
+  a2a:CanceledState
+  a2a:FailedState
+  a2a:UnknownState
+) .

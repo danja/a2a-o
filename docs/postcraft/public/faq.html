@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Agent2Agent Protocol Ontology FAQ</title>
+  <meta name="description"
+    content="Frequently asked questions about the A2A Protocol Ontology including implementation details and extension strategies.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="Agent2Agent Protocol Ontology FAQ">
+  <meta property="og:description" content="Implementation guidance for the A2A ontology">
+  <meta property="og:type" content="website">
+
+  <style>
+    body {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      font: 16px/1.6 system-ui, sans-serif;
+      color: #333;
+    }
+
+    h1 {
+      color: #1a73e8;
+    }
+
+    h2 {
+      color: #185abc;
+    }
+
+    h3 {
+      color: #1967d2;
+      margin-top: 2em;
+    }
+
+    pre {
+      background-color: #f5f5f5;
+      padding: 1em;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    code {
+      font-family: 'Courier New', Courier, monospace;
+      background-color: #f5f5f5;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    .question {
+      font-weight: bold;
+      color: #1a73e8;
+      margin-top: 2em;
+    }
+
+    .answer {
+      margin-bottom: 2em;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      margin: 20px auto;
+      display: block;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px;
+    }
+
+    .diagram-caption {
+      text-align: center;
+      font-style: italic;
+      margin-top: -15px;
+      margin-bottom: 25px;
+      color: #555;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Agent2Agent Protocol Ontology FAQ</h1>
+
+  <section id="introduction">
+    <p>This document provides frequently asked questions and answers about implementing, extending, and using the
+      Agent2Agent (A2A) Protocol Ontology. These guidelines will help developers and architects effectively leverage the
+      ontology for semantic integration with autonomous agent systems.</p>
+  </section>
+
+  <section id="faq">
+    <h2>Frequently Asked Questions</h2>
+
+    <div class="question" id="q1">Q1: How would you implement a SPARQL query to find all tasks in a specific state?
+    </div>
+    <div class="answer">
+      <p>To find all tasks in a specific state (for example, "InputRequired"), you would implement a SPARQL query that
+        traverses from the Task resource to its TaskStatus and checks the state property:</p>
+
+      <pre>PREFIX a2a: &lt;http://purl.org/stuff/a2a/&gt;
+PREFIX rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
+
+SELECT ?task ?taskId ?timestamp
+WHERE {
+  ?task rdf:type a2a:Task ;
+        a2a:id ?taskId ;
+        a2a:hasStatus ?status .
+
+  ?status rdf:type a2a:TaskStatus ;
+          a2a:state a2a:InputRequiredState ;
+          a2a:timestamp ?timestamp .
+
+  # Optional: retrieve associated message if available
+  OPTIONAL {
+    ?status a2a:hasMessage ?message .
+    ?message a2a:role ?role .
+  }
+}
+ORDER BY ?timestamp</pre>
+
+      <p>This query returns all tasks with their IDs and timestamps that are currently in the "InputRequired" state,
+        ordered by timestamp. You could modify it to include additional information such as associated messages,
+        artifacts, or client information by adding more triple patterns to the query.</p>
+
+      <img src="images/a2a-task-lifecycle.png" alt="A2A Task Lifecycle" />
+      <p class="diagram-caption">The A2A task lifecycle showing possible state transitions</p>
+
+      <p>The diagram above shows the possible states that a task can transition through. By understanding these state
+        transitions, you can implement more sophisticated queries that track task progression through different states.
+      </p>
+    </div>
+
+    <div class="question" id="q2">Q2: What mapping strategies would you recommend between this ontology and the JSON-RPC
+      interface of A2A?</div>
+    <div class="answer">
+      <p>For mapping between the A2A ontology and JSON-RPC interface, I recommend implementing a bidirectional
+        conversion layer with these strategies:</p>
+
+      <img src="images/a2a-core-classes-fixed.png" alt="A2A Core Classes" />
+      <p class="diagram-caption">Core classes in the A2A ontology that map to JSON-RPC interface objects</p>
+
+      <ol>
+        <li><strong>URI Generation Strategy</strong>:
+          <ul>
+            <li>Generate deterministic URIs for each JSON object based on its type and ID</li>
+            <li>Example: <code>http://example.org/a2a/task/{task-id}</code></li>
+          </ul>
+        </li>
+
+        <li><strong>JSON-to-RDF Conversion</strong>:
+          <ul>
+            <li>Map JSON object types to ontology classes (e.g., JSON Task → a2a:Task)</li>
+            <li>Convert JSON properties to corresponding RDF properties</li>
+            <li>Handle nested objects by creating new resources and linking them</li>
+            <li>Transform JSON arrays into RDF collections or multiple property assertions</li>
+          </ul>
+        </li>
+
+        <li><strong>RDF-to-JSON Conversion</strong>:
+          <ul>
+            <li>Implement SPARQL construct queries that rebuild the JSON structure</li>
+            <li>Use JSON-LD contexts to facilitate conversion while maintaining semantic precision</li>
+            <li>Include JSON-RPC specific metadata during conversion</li>
+          </ul>
+        </li>
+
+        <li><strong>State Tracking Pattern</strong>:
+          <ul>
+            <li>Store complete task history as RDF statements</li>
+            <li>Implement dedicated queries for JSON-RPC endpoints (tasks/get, tasks/send)</li>
+            <li>Use SPARQL to construct the exact JSON response needed</li>
+          </ul>
+        </li>
+
+        <li><strong>Schema Validation</strong>:
+          <ul>
+            <li>Use SHACL validation before storing RDF data</li>
+            <li>Implement JSON Schema validation for API requests/responses</li>
+            <li>Create a mapping between SHACL constraints and JSON Schema</li>
+          </ul>
+        </li>
+      </ol>
+
+      <p>This approach would allow organizations to leverage semantic web technologies for knowledge integration while
+        maintaining compatibility with the A2A JSON-RPC interface in client-facing applications.</p>
+    </div>
+
+    <div class="question" id="q3">Q3: How might this ontology be extended to support agent teams or delegated tasks?
+    </div>
+    <div class="answer">
+      <p>To extend the A2A ontology for agent teams and delegated tasks, I propose the following additions:</p>
+
+      <p><strong>1. Team Structure Classes:</strong></p>
+      <pre>a2a:Team a owl:Class ;
+  rdfs:label "Team"@en ;
+  rdfs:comment "A collection of agents collaborating on tasks"@en .
+
+a2a:TeamMembership a owl:Class ;
+  rdfs:label "Team Membership"@en ;
+  rdfs:comment "Relationship between an agent and a team"@en .
+
+a2a:Role a owl:Class ;
+  rdfs:label "Agent Role"@en ;
+  rdfs:comment "Functional role of an agent within a team"@en .</pre>
+
+      <p><strong>2. Task Delegation Properties:</strong></p>
+      <pre>a2a:delegatedBy a owl:ObjectProperty ;
+  rdfs:domain a2a:Task ;
+  rdfs:range a2a:AgentCard ;
+  rdfs:label "delegated by"@en .
+
+a2a:delegatedTo a owl:ObjectProperty ;
+  rdfs:domain a2a:Task ;
+  rdfs:range a2a:AgentCard ;
+  rdfs:label "delegated to"@en .
+
+a2a:parentTask a owl:ObjectProperty ;
+  rdfs:domain a2a:Task ;
+  rdfs:range a2a:Task ;
+  rdfs:label "parent task"@en .
+
+a2a:subTask a owl:ObjectProperty ;
+  rdfs:domain a2a:Task ;
+  rdfs:range a2a:Task ;
+  rdfs:label "sub task"@en .</pre>
+
+      <p><strong>3. Coordination Mechanisms:</strong></p>
+      <pre>a2a:Coordination a owl:Class ;
+  rdfs:label "Coordination"@en ;
+  rdfs:comment "Coordination mechanism between agents"@en .
+
+a2a:hasCoordinationPattern a owl:ObjectProperty ;
+  rdfs:domain a2a:Team ;
+  rdfs:range a2a:Coordination ;
+  rdfs:label "has coordination pattern"@en .</pre>
+
+      <p><strong>4. Additional Task Status States:</strong></p>
+      <pre>a2a:DelegatedState a a2a:TaskState ;
+  rdfs:label "Delegated"@en ;
+  rdfs:comment "Task has been delegated to another agent"@en .
+
+a2a:WaitingForDependencyState a a2a:TaskState ;
+  rdfs:label "Waiting for Dependency"@en ;
+  rdfs:comment "Task is waiting for a dependent task to complete"@en .</pre>
+
+      <p>These extensions would enable representation of complex multi-agent workflows where tasks can be decomposed,
+        delegated, and coordinated among team members, while maintaining compatibility with the existing A2A protocol
+        structure.</p>
+    </div>
+
+    <div class="question" id="q4">Q4: How would you model authentication and authorization within this ontology?</div>
+    <div class="answer">
+      <p>Authentication and authorization can be modeled as a comprehensive security layer within the A2A ontology:</p>
+
+      <p><strong>1. Authentication Model:</strong></p>
+      <pre>a2a:AuthenticationMethod a owl:Class ;
+  rdfs:label "Authentication Method"@en ;
+  rdfs:comment "Method used to authenticate agents"@en .
+
+a2a:CredentialType a owl:Class ;
+  rdfs:label "Credential Type"@en ;
+  rdfs:comment "Type of credentials used for authentication"@en .
+
+a2a:APIKey a owl:Class ;
+  rdfs:subClassOf a2a:CredentialType ;
+  rdfs:label "API Key"@en .
+
+a2a:OAuthCredential a owl:Class ;
+  rdfs:subClassOf a2a:CredentialType ;
+  rdfs:label "OAuth Credential"@en .
+
+a2a:JWTCredential a owl:Class ;
+  rdfs:subClassOf a2a:CredentialType ;
+  rdfs:label "JWT Credential"@en .</pre>
+
+      <p><strong>2. Authorization Model:</strong></p>
+      <pre>a2a:Permission a owl:Class ;
+  rdfs:label "Permission"@en ;
+  rdfs:comment "Represents a permission to perform an action"@en .
+
+a2a:AccessPolicy a owl:Class ;
+  rdfs:label "Access Policy"@en ;
+  rdfs:comment "Defines access controls for agents and resources"@en .
+
+a2a:Scope a owl:Class ;
+  rdfs:label "Scope"@en ;
+  rdfs:comment "Limits the extent of access for a permission"@en .
+
+a2a:hasPermission a owl:ObjectProperty ;
+  rdfs:domain a2a:AgentCard ;
+  rdfs:range a2a:Permission ;
+  rdfs:label "has permission"@en .
+
+a2a:requiresPermission a owl:ObjectProperty ;
+  rdfs:domain a2a:Skill ;
+  rdfs:range a2a:Permission ;
+  rdfs:label "requires permission"@en .</pre>
+
+      <p><strong>3. Security Properties:</strong></p>
+      <pre>a2a:isAuthenticatedWith a owl:ObjectProperty ;
+  rdfs:domain a2a:Task ;
+  rdfs:range a2a:CredentialType ;
+  rdfs:label "is authenticated with"@en .
+
+a2a:encryptionMethod a owl:DatatypeProperty ;
+  rdfs:domain a2a:Message ;
+  rdfs:range xsd:string ;
+  rdfs:label "encryption method"@en .
+
+a2a:securityLevel a owl:DatatypeProperty ;
+  rdfs:range xsd:string ;
+  rdfs:label "security level"@en .</pre>
+
+      <p>This security model addresses several key aspects:</p>
+      <ul>
+        <li>It separates authentication (identity verification) from authorization (permission management)</li>
+        <li>It supports various credential types commonly used in enterprise environments</li>
+        <li>It allows fine-grained permission control at the skill level</li>
+        <li>It enables tracking security metadata for tasks and messages</li>
+        <li>It provides a foundation for secure agent-to-agent communication that can be extended to accommodate
+          specific organizational security policies</li>
+      </ul>
+
+      <p>To implement this in practice, you would need to integrate with existing identity management systems and ensure
+        proper credential handling following security best practices.</p>
+    </div>
+
+    <div class="question" id="q5">Q5: What approach would you take to integrate this ontology with existing agent
+      frameworks?</div>
+    <div class="answer">
+      <p>Integrating the A2A ontology with existing agent frameworks requires a layered approach that respects the
+        existing architecture while enabling semantic interoperability. Here's a recommended strategy:</p>
+
+      <p><strong>1. Adapter Pattern Implementation:</strong></p>
+      <ul>
+        <li>Create bidirectional adapter components for each framework (e.g., LangGraph, CrewAI, Agent Developer Kit)
+        </li>
+        <li>Implement serialization/deserialization between the framework's native objects and RDF/OWL representations
+        </li>
+        <li>Use a reflection-based approach to minimize manual mapping code</li>
+      </ul>
+
+      <p><strong>2. Annotation System:</strong></p>
+      <ul>
+        <li>Develop annotations or decorators for existing agent code that map to ontology concepts</li>
+        <li>Example (Python):</li>
+      </ul>
+      <pre>@a2a_agent(
+    name="Research Assistant",
+    description="Helps with research tasks",
+    capabilities=["streaming"]
+)
+class ResearchAssistant:
+    @a2a_skill(
+        id="web-search",
+        name="Web Search",
+        description="Search the web for information"
+    )
+    def search(self, query):
+        # implementation
+        pass</pre>
+
+      <p><strong>3. Middleware Integration:</strong></p>
+      <ul>
+        <li>Create middleware that intercepts API calls between agents</li>
+        <li>Transform requests/responses between the ontology model and the framework's native format</li>
+        <li>Maintain a shared RDF store to enable semantic queries across frameworks</li>
+      </ul>
+
+      <p><strong>4. Framework-Specific Connectors:</strong></p>
+      <ul>
+        <li>Implement custom connectors for popular frameworks with specific optimizations:</li>
+        <li>LangGraph: Map graph node structures to ontology task decomposition</li>
+        <li>CrewAI: Connect agent roles to ontology team structures</li>
+        <li>Agent Developer Kit: Integrate with existing tool representations</li>
+      </ul>
+
+      <p><strong>5. Dynamic Capabilities Registration:</strong></p>
+      <ul>
+        <li>Enable runtime registration of skills and capabilities</li>
+        <li>Allow agents to publish their capabilities using the ontology structure</li>
+        <li>Support dynamic discovery of agent capabilities across frameworks</li>
+      </ul>
+
+      <p><strong>6. Implementation Examples:</strong></p>
+      <p>For LangGraph integration:</p>
+      <pre>from rdflib import Graph, URIRef, Literal, Namespace
+from rdflib.namespace import RDF, RDFS
+import langraph as lg
+
+A2A = Namespace("http://purl.org/stuff/a2a/")
+
+class A2ALangGraphAdapter:
+    def __init__(self):
+        self.graph = Graph()
+        self.graph.parse("a2a-ontology.ttl")
+
+    def convert_graph_to_rdf(self, langraph_instance):
+        # Map nodes to a2a:Task instances
+        for node in langraph_instance.nodes:
+            task_uri = URIRef(f"http://example.org/task/{node.id}")
+            self.graph.add((task_uri, RDF.type, A2A.Task))
+            self.graph.add((task_uri, A2A.id, Literal(node.id)))
+
+            # Map node state to task status
+            status_uri = URIRef(f"http://example.org/task/{node.id}/status")
+            self.graph.add((status_uri, RDF.type, A2A.TaskStatus))
+
+            # Map edges to dependencies
+            # ... additional mapping code ...
+
+        return self.graph
+
+    def execute_semantic_query(self, sparql_query):
+        # Execute SPARQL against the RDF representation
+        results = self.graph.query(sparql_query)
+        return results</pre>
+
+      <p>This integration strategy provides flexibility while leveraging the semantic richness of the A2A ontology,
+        enabling agent interoperability across different frameworks.</p>
+    </div>
+
+    <div class="question" id="q6">Q6: How could task execution metrics and performance data be represented in this
+      ontology?</div>
+    <div class="answer">
+      <p>To represent task execution metrics and performance data in the A2A ontology, we can create an extension that
+        captures quantitative and qualitative aspects of agent performance:</p>
+
+      <p><strong>1. Core Metrics Classes:</strong></p>
+      <pre>a2a:Metric a owl:Class ;
+  rdfs:label "Metric"@en ;
+  rdfs:comment "A measured property of task execution"@en .
+
+a2a:PerformanceReport a owl:Class ;
+  rdfs:label "Performance Report"@en ;
+  rdfs:comment "Collection of metrics for a task or agent"@en .
+
+a2a:TimeMetric a owl:Class ;
+  rdfs:subClassOf a2a:Metric ;
+  rdfs:label "Time Metric"@en ;
+  rdfs:comment "Metrics related to time duration"@en .
+
+a2a:ResourceMetric a owl:Class ;
+  rdfs:subClassOf a2a:Metric ;
+  rdfs:label "Resource Metric"@en ;
+  rdfs:comment "Metrics related to resource consumption"@en .
+
+a2a:QualityMetric a owl:Class ;
+  rdfs:subClassOf a2a:Metric ;
+  rdfs:label "Quality Metric"@en ;
+  rdfs:comment "Metrics related to output quality"@en .</pre>
+
+      <p><strong>2. Specific Metric Types:</strong></p>
+      <pre>a2a:ResponseTime a owl:Class ;
+  rdfs:subClassOf a2a:TimeMetric ;
+  rdfs:label "Response Time"@en .
+
+a2a:ProcessingDuration a owl:Class ;
+  rdfs:subClassOf a2a:TimeMetric ;
+  rdfs:label "Processing Duration"@en .
+
+a2a:TokenConsumption a owl:Class ;
+  rdfs:subClassOf a2a:ResourceMetric ;
+  rdfs:label "Token Consumption"@en .
+
+a2a:ComputeUsage a owl:Class ;
+  rdfs:subClassOf a2a:ResourceMetric ;
+  rdfs:label "Compute Usage"@en .
+
+a2a:AccuracyScore a owl:Class ;
+  rdfs:subClassOf a2a:QualityMetric ;
+  rdfs:label "Accuracy Score"@en .
+
+a2a:UserSatisfaction a owl:Class ;
+  rdfs:subClassOf a2a:QualityMetric ;
+  rdfs:label "User Satisfaction"@en .</pre>
+
+      <p><strong>3. Metric Properties:</strong></p>
+      <pre>a2a:metricValue a owl:DatatypeProperty ;
+  rdfs:domain a2a:Metric ;
+  rdfs:range xsd:decimal ;
+  rdfs:label "metric value"@en .
+
+a2a:metricUnit a owl:DatatypeProperty ;
+  rdfs:domain a2a:Metric ;
+  rdfs:range xsd:string ;
+  rdfs:label "metric unit"@en .
+
+a2a:metricTimestamp a owl:DatatypeProperty ;
+  rdfs:domain a2a:Metric ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "metric timestamp"@en .
+
+a2a:hasMetric a owl:ObjectProperty ;
+  rdfs:domain [
+    owl:unionOf (a2a:Task a2a:AgentCard a2a:PerformanceReport)
+  ] ;
+  rdfs:range a2a:Metric ;
+  rdfs:label "has metric"@en .</pre>
+
+      <p><strong>4. Task State Transitions:</strong></p>
+      <pre>a2a:StateTransition a owl:Class ;
+  rdfs:label "State Transition"@en ;
+  rdfs:comment "Record of a task changing state"@en .
+
+a2a:fromState a owl:ObjectProperty ;
+  rdfs:domain a2a:StateTransition ;
+  rdfs:range a2a:TaskState ;
+  rdfs:label "from state"@en .
+
+a2a:toState a owl:ObjectProperty ;
+  rdfs:domain a2a:StateTransition ;
+  rdfs:range a2a:TaskState ;
+  rdfs:label "to state"@en .
+
+a2a:transitionTimestamp a owl:DatatypeProperty ;
+  rdfs:domain a2a:StateTransition ;
+  rdfs:range xsd:dateTime ;
+  rdfs:label "transition timestamp"@en .
+
+a2a:hasStateTransition a owl:ObjectProperty ;
+  rdfs:domain a2a:Task ;
+  rdfs:range a2a:StateTransition ;
+  rdfs:label "has state transition"@en .</pre>
+
+      <p><strong>5. Aggregated Analytics:</strong></p>
+      <pre>a2a:AgentPerformanceProfile a owl:Class ;
+  rdfs:label "Agent Performance Profile"@en ;
+  rdfs:comment "Statistical profile of an agent's performance across tasks"@en .
+
+a2a:averageResponseTime a owl:DatatypeProperty ;
+  rdfs:domain a2a:AgentPerformanceProfile ;
+  rdfs:range xsd:decimal ;
+  rdfs:label "average response time"@en .
+
+a2a:successRate a owl:DatatypeProperty ;
+  rdfs:domain a2a:AgentPerformanceProfile ;
+  rdfs:range xsd:decimal ;
+  rdfs:label "success rate"@en .
+
+a2a:hasPerformanceProfile a owl:ObjectProperty ;
+  rdfs:domain a2a:AgentCard ;
+  rdfs:range a2a:AgentPerformanceProfile ;
+  rdfs:label "has performance profile"@en .</pre>
+
+      <p><strong>6. Usage Example:</strong></p>
+      <p>Here's how you might use this extension to record performance metrics for a task:</p>
+
+      <pre>PREFIX a2a: &lt;http://purl.org/stuff/a2a/&gt;
+PREFIX rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
+PREFIX xsd: &lt;http://www.w3.org/2001/XMLSchema#&gt;
+
+# Record task completion time
+&lt;http://example.org/task/123&gt; a a2a:Task ;
+    a2a:id "123" ;
+    a2a:hasMetric [
+        a a2a:ProcessingDuration ;
+        a2a:metricValue "3.45"^^xsd:decimal ;
+        a2a:metricUnit "seconds" ;
+        a2a:metricTimestamp "2024-04-18T15:30:00Z"^^xsd:dateTime
+    ] .
+
+# Record token usage
+&lt;http://example.org/task/123&gt; a2a:hasMetric [
+    a a2a:TokenConsumption ;
+    a2a:metricValue "1250"^^xsd:decimal ;
+    a2a:metricUnit "tokens" ;
+    a2a:metricTimestamp "2024-04-18T15:30:00Z"^^xsd:dateTime
+] .
+
+# Record user feedback
+&lt;http://example.org/task/123&gt; a2a:hasMetric [
+    a a2a:UserSatisfaction ;
+    a2a:metricValue "4.5"^^xsd:decimal ;
+    a2a:metricUnit "rating" ;
+    a2a:metricTimestamp "2024-04-18T15:35:00Z"^^xsd:dateTime
+] .</pre>
+
+      <p>This performance metrics extension provides a comprehensive framework for measuring, tracking, and analyzing
+        agent performance, which can be valuable for optimization, comparison, and selection of appropriate agents for
+        specific tasks.</p>
+    </div>
+
+    <div class="question" id="q7">Q7: What patterns would you recommend for versioning and evolution of agent
+      capabilities over time?</div>
+    <div class="answer">
+      <p>Managing the evolution of agent capabilities requires robust versioning patterns that balance innovation with
+        stability. Here's a comprehensive approach to versioning and evolution in the A2A ontology:</p>
+
+      <p><strong>1. Ontology Versioning:</strong></p>
+      <pre>a2a:OntologyVersion a owl:Class ;
+  rdfs:label "Ontology Version"@en ;
+  rdfs:comment "Version information for the A2A ontology"@en .
+
+a2a:versionNumber a owl:DatatypeProperty ;
+  rdfs:domain a2a:OntologyVersion ;
+  rdfs:range xsd:string ;
+  rdfs:label "version number"@en .
+
+a2a:releaseDate a owl:DatatypeProperty ;
+  rdfs:domain a2a:OntologyVersion ;
+  rdfs:range xsd:date ;
+  rdfs:label "release date"@en .
+
+a2a:compatibleWith a owl:ObjectProperty ;
+  rdfs:domain a2a:OntologyVersion ;
+  rdfs:range a2a:OntologyVersion ;
+  rdfs:label "compatible with"@en .</pre>
+
+      <p><strong>2. Capability Versioning:</strong></p>
+      <pre>a2a:CapabilityVersion a owl:Class ;
+  rdfs:label "Capability Version"@en ;
+  rdfs:comment "Version information for agent capabilities"@en .
+
+a2a:majorVersion a owl:DatatypeProperty ;
+  rdfs:domain a2a:CapabilityVersion ;
+  rdfs:range xsd:integer ;
+  rdfs:label "major version"@en .
+
+a2a:minorVersion a owl:DatatypeProperty ;
+  rdfs:domain a2a:CapabilityVersion ;
+  rdfs:range xsd:integer ;
+  rdfs:label "minor version"@en .
+
+a2a:patchVersion a owl:DatatypeProperty ;
+  rdfs:domain a2a:CapabilityVersion ;
+  rdfs:range xsd:integer ;
+  rdfs:label "patch version"@en .
+
+a2a:hasVersion a owl:ObjectProperty ;
+  rdfs:domain [
+    owl:unionOf (a2a:Skill a2a:AgentCard)
+  ] ;
+  rdfs:range a2a:CapabilityVersion ;
+  rdfs:label "has version"@en .</pre>
+
+      <p><strong>3. Deprecation Management:</strong></p>
+      <pre>a2a:DeprecationInfo a owl:Class ;
+  rdfs:label "Deprecation Information"@en ;
+  rdfs:comment "Information about deprecated components"@en .
+
+a2a:deprecatedSince a owl:DatatypeProperty ;
+  rdfs:domain a2a:DeprecationInfo ;
+  rdfs:range xsd:date ;
+  rdfs:label "deprecated since"@en .
+
+a2a:supportEndDate a owl:DatatypeProperty ;
+  rdfs:domain a2a:DeprecationInfo ;
+  rdfs:range xsd:date ;
+  rdfs:label "support end date"@en .
+
+a2a:replacedBy a owl:ObjectProperty ;
+  rdfs:domain a2a:DeprecationInfo ;
+  rdfs:label "replaced by"@en .
+
+a2a:hasDeprecationInfo a owl:ObjectProperty ;
+  rdfs:range a2a:DeprecationInfo ;
+  rdfs:label "has deprecation info"@en .</pre>
+
+      <p><strong>4. Version Compatibility Rules:</strong></p>
+      <pre>a2a:CompatibilityRule a owl:Class ;
+  rdfs:label "Compatibility Rule"@en ;
+  rdfs:comment "Rules governing compatibility between versions"@en .
+
+a2a:minimumVersion a owl:DatatypeProperty ;
+  rdfs:domain a2a:CompatibilityRule ;
+  rdfs:range xsd:string ;
+  rdfs:label "minimum version"@en .
+
+a2a:maximumVersion a owl:DatatypeProperty ;
+  rdfs:domain a2a:CompatibilityRule ;
+  rdfs:range xsd:string ;
+  rdfs:label "maximum version"@en .
+
+a2a:hasCompatibilityRule a owl:ObjectProperty ;
+  rdfs:domain a2a:Skill ;
+  rdfs:range a2a:CompatibilityRule ;
+  rdfs:label "has compatibility rule"@en .</pre>
+
+      <p><strong>5. Capability Evolution Management:</strong></p>
+      <pre>a2a:CapabilityEvolution a owl:Class ;
+  rdfs:label "Capability Evolution"@en ;
+  rdfs:comment "Record of how a capability has evolved over time"@en .
+
+a2a:previousCapability a owl:ObjectProperty ;
+  rdfs:domain a2a:CapabilityEvolution ;
+  rdfs:range a2a:Skill ;
+  rdfs:label "previous capability"@en .
+
+a2a:nextCapability a owl:ObjectProperty ;
+  rdfs:domain a2a:CapabilityEvolution ;
+  rdfs:range a2a:Skill ;
+  rdfs:label "next capability"@en .
+
+a2a:changeType a owl:DatatypeProperty ;
+  rdfs:domain a2a:CapabilityEvolution ;
+  rdfs:range [
+    owl:oneOf (
+      "addition"
+      "removal"
+      "modification"
+      "enhancement"
+    )
+  ] ;
+  rdfs:label "change type"@en .
+
+a2a:hasEvolutionHistory a owl:ObjectProperty ;
+  rdfs:domain a2a:Skill ;
+  rdfs:range a2a:CapabilityEvolution ;
+  rdfs:label "has evolution history"@en .</pre>
+
+      <p><strong>6. Implementation Recommendations:</strong></p>
+      <ol>
+        <li><strong>Semantic Versioning</strong>: Implement semantic versioning (SemVer) for all agent capabilities:
+          <ul>
+            <li>Major version: Breaking changes in the capability's interface</li>
+            <li>Minor version: New functionality added in a backward-compatible manner</li>
+            <li>Patch version: Backward-compatible bug fixes</li>
+          </ul>
+        </li>
+        <li><strong>Capability Discovery</strong>: Implement a discovery mechanism that allows agents to query for
+          specific capability versions:
+          <pre>PREFIX a2a: &lt;http://purl.org/stuff/a2a/&gt;
+
+SELECT ?agent ?skill WHERE {
+  ?agent a2a:hasSkill ?skill .
+  ?skill a2a:id "web-search" ;
+         a2a:hasVersion [
+           a2a:majorVersion ?major ;
+           a2a:minorVersion ?minor
+         ] .
+  FILTER(?major = 2 && ?minor >= 3)
+}</pre>
+        </li>
+        <li><strong>Deprecation Notices</strong>: Provide clear deprecation notices for capabilities that will be
+          removed:
+          <pre>&lt;http://example.org/agent/search-agent/skill/web-search-v1&gt;
+  a2a:hasDeprecationInfo [
+    a2a:deprecatedSince "2024-01-15"^^xsd:date ;
+    a2a:supportEndDate "2024-07-15"^^xsd:date ;
+    a2a:replacedBy &lt;http://example.org/agent/search-agent/skill/web-search-v2&gt; ;
+  ] .</pre>
+        </li>
+        <li><strong>Version Negotiation</strong>: Establish a protocol for version negotiation between agents to ensure
+          compatibility during interactions.</li>
+        <li><strong>Ontology Extension Mechanism</strong>: Define a pattern for safely extending the ontology with
+          custom classes and properties without breaking compatibility.</li>
+      </ol>
+
+      <p>These versioning patterns provide a structured approach to managing the evolution of agent capabilities over
+        time, ensuring that agents can maintain interoperability even as they evolve and improve their capabilities.</p>
+    </div>
+
+    <div class="question" id="q8">Q8: How does A2A integrate with the Model Context Protocol (MCP)?</div>
+    <div class="answer">
+      <p>The Agent2Agent Protocol (A2A) and Model Context Protocol (MCP) serve complementary purposes in the AI agent
+        ecosystem. Their integration creates a powerful framework for both agent-to-agent communication and
+        tool/resource access.</p>
+
+      <img src="images/a2a-mcp-relationship.png" alt="A2A and MCP Relationship" />
+      <p class="diagram-caption">Relationship between A2A and MCP in an agent ecosystem</p>
+
+      <p>Key integration points include:</p>
+
+      <ol>
+        <li><strong>Complementary Focus Areas</strong>:
+          <ul>
+            <li>A2A specializes in agent-to-agent communication and task management</li>
+            <li>MCP specializes in connecting agents to tools, resources, and contextual information</li>
+          </ul>
+        </li>
+
+        <li><strong>Resource/Artifact Mapping</strong>:
+          <ul>
+            <li>MCP Resources can be encapsulated as A2A Artifacts for transmission between agents</li>
+            <li>A2A TaskStatus updates can reference MCP Resources to provide context</li>
+          </ul>
+        </li>
+
+        <li><strong>Tool/Skill Integration</strong>:
+          <ul>
+            <li>MCP Tools can be represented as A2A Skills in Agent Cards</li>
+            <li>A2A agents can access MCP Tools through an established mapping layer</li>
+          </ul>
+        </li>
+
+        <li><strong>Ontological Alignment</strong>:
+          <ul>
+            <li>Create mapping ontology properties to formally relate MCP and A2A concepts</li>
+            <li>Example:</li>
+          </ul>
+          <pre>a2a:representsResource a owl:ObjectProperty ;
+  rdfs:domain a2a:Artifact ;
+  rdfs:range mcp:Resource ;
+  rdfs:label "represents resource"@en .
+
+a2a:implementedByTool a owl:ObjectProperty ;
+  rdfs:domain a2a:Skill ;
+  rdfs:range mcp:Tool ;
+  rdfs:label "implemented by tool"@en .</pre>
+        </li>
+
+        <li><strong>Implementation Pattern</strong>:
+          <ul>
+            <li>MCP-enabled A2A agents can be created with a layered architecture:</li>
+            <li>A2A layer: Handles agent communication, task management, and messaging</li>
+            <li>MCP layer: Provides access to tools and resources for task execution</li>
+            <li>Integration layer: Maps between A2A concepts and MCP concepts</li>
+          </ul>
+        </li>
+      </ol>
+
+      <p>A practical implementation might look like this:</p>
+
+      <pre>from a2a import AgentCard, Skill, Task
+from mcp import Server, Tool, Resource
+
+class IntegratedAgent:
+    def __init__(self):
+        # A2A components
+        self.agent_card = AgentCard(
+            name="Integrated Agent",
+            description="Agent with both A2A and MCP capabilities"
+        )
+
+        # MCP components
+        self.mcp_server = Server()
+        self.tools = self.mcp_server.get_tools()
+
+        # Register MCP tools as A2A skills
+        for tool in self.tools:
+            skill = self._map_tool_to_skill(tool)
+            self.agent_card.add_skill(skill)
+
+    def _map_tool_to_skill(self, tool):
+        # Create A2A skill from MCP tool
+        return Skill(
+            id=f"tool-{tool.id}",
+            name=tool.name,
+            description=tool.description
+        )
+
+    async def process_task(self, task):
+        # Use A2A to handle task structure and communication
+        task.update_status("working")
+
+        # Extract parameters from A2A message
+        parameters = self._extract_parameters(task)
+
+        # Use MCP to execute tools
+        tool_id = self._determine_tool(task)
+        tool = self.mcp_server.get_tool(tool_id)
+        result = await tool.execute(parameters)
+
+        # Create A2A artifact from MCP tool result
+        artifact = self._create_artifact_from_result(result)
+        task.add_artifact(artifact)
+
+        # Return completed task
+        task.update_status("completed")
+        return task</pre>
+
+      <p>This integration approach allows agents to leverage both protocols' strengths: A2A for opaque, task-oriented
+        agent communication and MCP for structured access to tools and resources. The result is a more powerful agent
+        ecosystem that can handle both complex agent collaboration and specialized tool execution.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Status: Draft<br>
+      Version: 1.0.0<br>
+      Date: 2024-04-18<br>
+      License: <a href="http://opensource.org/licenses/MIT">MIT License</a></p>
+    <p>Created for A2A Ontology Implementation Guide</p>
+  </footer>
+
+</body>
+
+</html>
