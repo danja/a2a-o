@@ -20,6 +20,16 @@
     :source "layout/base" ;
     :destination "public" .
 
+:copyDocs a :ConfigSet ;
+    :workingDirectory "public" ;
+    :source "content/static/docs" ;
+    :destination "public" .
+
+:copyCodes a :ConfigSet ;
+    :workingDirectory "public" ;
+    :source "content/static/code" ;
+    :destination "public/code" .
+
 #######################
 # for md-to-sparqlstore
 

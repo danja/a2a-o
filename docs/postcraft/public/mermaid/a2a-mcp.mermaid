@@ -1,0 +1,27 @@
+flowchart TD
+    User[User] --> Client[Client Agent]
+    Client --> |A2A Protocol| RemoteAgent[Remote Agent]
+    RemoteAgent --> |MCP Protocol| Tool1[Tool 1]
+    RemoteAgent --> |MCP Protocol| Tool2[Tool 2]
+    RemoteAgent --> |MCP Protocol| Resource[Resource]
+    RemoteAgent --> |A2A Protocol| OtherAgent[Other Agent]
+
+    subgraph "A2A Domain"
+        Client
+        RemoteAgent
+        OtherAgent
+    end
+
+    subgraph "MCP Domain"
+        Tool1
+        Tool2
+        Resource
+    end
+
+    style User fill:#f9f,stroke:#333,stroke-width:2px
+    style Client fill:#bbf,stroke:#333,stroke-width:2px
+    style RemoteAgent fill:#bbf,stroke:#333,stroke-width:2px
+    style OtherAgent fill:#bbf,stroke:#333,stroke-width:2px
+    style Tool1 fill:#bfb,stroke:#333,stroke-width:2px
+    style Tool2 fill:#bfb,stroke:#333,stroke-width:2px
+    style Resource fill:#bfb,stroke:#333,stroke-width:2px
